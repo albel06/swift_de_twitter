@@ -10,10 +10,6 @@ import UIKit
 
 class TweetListViewController: UITableViewController {
 
-    
-    var objects = NSMutableArray()
-
-
     override func awakeFromNib() {
         super.awakeFromNib()
     }
