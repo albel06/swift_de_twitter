@@ -7,31 +7,67 @@
 //
 
 import UIKit
+import Accounts
+import Social
 
 class TweetListViewController: UITableViewController {
 
+    let accountStore = ACAccountStore()
+    var tweets: [NSDictionary] = [NSDictionary]()
+    
+    let imageQueue = NSOperationQueue()
+    
     override func awakeFromNib() {
         super.awakeFromNib()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        self.navigationItem.leftBarButtonItem = self.editButtonItem()
-
-        let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "insertNewObject:")
-        self.navigationItem.rightBarButtonItem = addButton
+        self.setup()
     }
 
+    func setup() {
+        let accountType = accountStore.accountTypeWithAccountTypeIdentifier(ACAccountTypeIdentifierTwitter)
+        
+        // SLRequest Handler
+        let slRequestHandler = {
+            (data: NSData!, response: NSHTTPURLResponse!, error: NSError!) -> () in
+            if let _response = response {
+                var jsonError: NSError?
+                if let timeLine: NSArray = NSJSONSerialization.JSONObjectWithData(data,
+                    options: NSJSONReadingOptions.MutableLeaves, error: &jsonError) as? NSArray {
+                        for tweet: NSDictionary in timeLine as [NSDictionary] {
+                            self.tweets.append(tweet)
+                        }
+                }
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in self.tableView.reloadData() })
+            } else {
+                println("JSON Error")
+            }
+        }
+        
+        // アカウントアクセスコンプリートハンドラ
+        let handler: ACAccountStoreRequestAccessCompletionHandler! = { granted, error in
+            if (granted) {
+                let accounts = self.accountStore.accountsWithAccountType(accountType)
+                if (accounts.isEmpty) {
+                    return
+                }
+                let request = SLRequest(forServiceType: SLServiceTypeTwitter,
+                                        requestMethod: SLRequestMethod.GET,
+                                        URL: NSURL(string: "https://api.twitter.com/1.1/statuses/home_timeline.json")!,
+                                        parameters: nil)
+                request.account = accounts[0] as ACAccount
+                request.performRequestWithHandler(slRequestHandler)
+            }
+        }
+        
+        accountStore.requestAccessToAccountsWithType(accountType, options: nil, handler)
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
-    }
-
-    func insertNewObject(sender: AnyObject) {
-        objects.insertObject(NSDate(), atIndex: 0)
-        let indexPath = NSIndexPath(forRow: 0, inSection: 0)
-        self.tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
     }
 
     // MARK: - Segues
@@ -39,8 +75,7 @@ class TweetListViewController: UITableViewController {
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == "showDetail" {
             if let indexPath = self.tableView.indexPathForSelectedRow() {
-                let object = objects[indexPath.row] as NSDate
-            (segue.destinationViewController as TweetDetailViewController).detailItem = object
+
             }
         }
     }
@@ -52,14 +87,25 @@ class TweetListViewController: UITableViewController {
     }
 
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return objects.count
+        return tweets.count
     }
 
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as UITableViewCell
+        let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as TweetCell
 
-        let object = objects[indexPath.row] as NSDate
-        cell.textLabel!.text = object.description
+        cell.update(tweets[indexPath.row])
+
+        let user: NSDictionary = cell.model.objectForKey("user") as NSDictionary
+
+        if let url: String = user.objectForKey("profile_image_url") as? String {
+            var handler = { (response: NSURLResponse!, data: NSData!, error: NSError!) -> Void in
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    cell.profileImageView.image = UIImage(data: data)!
+                })
+            }
+            let req = NSURLRequest(URL: NSURL(string: url)!)
+            NSURLConnection.sendAsynchronousRequest(req, queue: self.imageQueue, completionHandler: handler)
+        }
         return cell
     }
 
@@ -67,16 +113,4 @@ class TweetListViewController: UITableViewController {
         // Return false if you do not want the specified item to be editable.
         return true
     }
-
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete {
-            objects.removeObjectAtIndex(indexPath.row)
-            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-        } else if editingStyle == .Insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
-        }
-    }
-
-
 }
-
