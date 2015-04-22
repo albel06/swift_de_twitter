@@ -24,6 +24,8 @@ class TweetListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setup()
+        self.tableView.estimatedRowHeight = 70.0
+        self.tableView.rowHeight = UITableViewAutomaticDimension
     }
 
     func setup() {
@@ -90,6 +92,10 @@ class TweetListViewController: UITableViewController {
         return tweets.count
     }
 
+    override func tableView(tableView: UITableView, estimatedHeightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+        return 70.0
+    }
+    
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as TweetCell
 
