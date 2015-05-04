@@ -22,6 +22,8 @@ class TweetListViewController: UITableViewController {
     }
 
     override func viewDidLoad() {
+        let dummy = TweetDetailViewController()
+        
         super.viewDidLoad()
         self.setup()
         self.tableView.estimatedRowHeight = 70.0
@@ -75,9 +77,11 @@ class TweetListViewController: UITableViewController {
     // MARK: - Segues
 
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+
         if segue.identifier == "showDetail" {
             if let indexPath = self.tableView.indexPathForSelectedRow() {
-
+                let object = tweets[indexPath.row] as NSDictionary
+            (segue.destinationViewController as TweetDetailViewController).detailItem = object
             }
         }
     }

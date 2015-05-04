@@ -421,6 +421,7 @@
 				F91DE6E91A7FA84E00420138 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F91DE6EA1A7FA84E00420138 /* Build configuration list for PBXNativeTarget "Swift_de_TwitterTests" */ = {
 			isa = XCConfigurationList;
@@ -429,6 +430,7 @@
 				F91DE6EC1A7FA84E00420138 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
